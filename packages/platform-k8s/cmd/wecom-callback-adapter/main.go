@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"log/slog"
 	"os"
 	"strings"
@@ -15,7 +14,8 @@ func main() {
 		envOrDefault("WECOM_CALLBACK_NATS_SUBJECT", "platform.wecom.messages.received"),
 	)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("fatal error", "error", err)
+		os.Exit(1)
 	}
 	defer publisher.Close()
 
@@ -26,11 +26,13 @@ func main() {
 		EncodingAESKey: requiredEnv("WECOM_CALLBACK_ENCODING_AES_KEY"),
 	}, publisher, slog.Default())
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("fatal error", "error", err)
+		os.Exit(1)
 	}
-	log.Printf("wecom-callback-adapter listening on %s path=%s", envOrDefault("WECOM_CALLBACK_HTTP_ADDR", ":8080"), envOrDefault("WECOM_CALLBACK_PATH", "/wecom/callback"))
+	slog.Info("wecom-callback-adapter listening", "addr", envOrDefault("WECOM_CALLBACK_HTTP_ADDR", ":8080"), "path", envOrDefault("WECOM_CALLBACK_PATH", "/wecom/callback"))
 	if err := server.ListenAndServe(); err != nil {
-		log.Fatal(err)
+		slog.Error("fatal error", "error", err)
+		os.Exit(1)
 	}
 }
 
@@ -45,7 +47,8 @@ func envOrDefault(key string, fallback string) string {
 func requiredEnv(key string) string {
 	value := strings.TrimSpace(os.Getenv(key))
 	if value == "" {
-		log.Fatalf("%s is required", key)
+		slog.Error("required environment variable is missing", "key", key)
+		os.Exit(1)
 	}
 	return value
 }

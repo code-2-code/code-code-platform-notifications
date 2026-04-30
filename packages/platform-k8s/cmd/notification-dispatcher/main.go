@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -23,7 +23,8 @@ func main() {
 		AppriseURL:   envOrDefault("NOTIFICATION_DISPATCHER_APPRISE_URL", notificationdispatcher.DefaultAppriseURL),
 	})
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("fatal error", "error", err)
+		os.Exit(1)
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -40,11 +41,12 @@ func main() {
 		}
 	}()
 
-	log.Printf("notification-dispatcher starting (subject=%s)", envOrDefault("NOTIFICATION_DISPATCHER_SUBJECT", notificationdispatcher.DefaultSubject))
+	slog.Info("notification-dispatcher starting", "subject", envOrDefault("NOTIFICATION_DISPATCHER_SUBJECT", notificationdispatcher.DefaultSubject))
 	select {
 	case err := <-errCh:
 		if err != nil && !errors.Is(err, context.Canceled) {
-			log.Fatal(err)
+			slog.Error("fatal error", "error", err)
+			os.Exit(1)
 		}
 	case <-ctx.Done():
 	}
